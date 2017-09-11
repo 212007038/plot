@@ -11,7 +11,9 @@ def main(arg_list=None):
     # Get command line arguments.
     parser = argparse.ArgumentParser(description="Plot given MIT file")
     parser.add_argument('-i', dest='input_file',
-                        help='name of MIT waveform to plot with annotations', required=True)
+                        help='name of MIT waveform to plot with annotations (if present)', required=True)
+    parser.add_argument('-s', dest='tail_samples_removed', type=int, default=0,
+                        help='number of sample to remove from the end, optimizes plot, defaults to zero', required=True)
     parser.add_argument('--version', action='version', help='Print version.',
                         version='%(prog)s Version {version}'.format(version=__version__))
 
@@ -34,15 +36,18 @@ def main(arg_list=None):
     # Only get the first 2 channels.
     rec = wfdb.rdsamp(filename, channels=[0])
     sample_count = rec.siglen
-    rec = wfdb.rdsamp(filename, channels=[0], sampto=sample_count-10)
+    rec = wfdb.rdsamp(filename, channels=[0], sampto=sample_count-args.tail_samples_removed)
 
     # Does an annotation file exist?
     if os.path.isfile(filename + '.prf' ) is True:
-        an_file = wfdb.rdann(filename, annotator='prf', sampto=sample_count-10)
+        an_file = wfdb.rdann(filename, annotator='prf', sampto=sample_count-args.tail_samples_removed)
     else:
         an_file = None
 
-    wfdb.plotrec(rec, timeunits='seconds', figsize=(20, 20), annotation=an_file, ecggrids='all')
+    # Construct a title
+    plot_title = filename + ', Sample count:  ' + str(sample_count) + ', Pace count: ' + str(len(an_file.annsamp))
+
+    wfdb.plotrec(rec, title=plot_title, timeunits='seconds', figsize=(20, 10), annotation=an_file, ecggrids='all')
 
 ###############################################################################
 if __name__ == '__main__':
