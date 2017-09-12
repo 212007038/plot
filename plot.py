@@ -33,10 +33,11 @@ def main(arg_list=None):
 
     filename, file_extension = os.path.splitext(args.input_file)
 
-    # Create record and annotation objects.
-    # Only get the first 2 channels.
-    rec = wfdb.rdsamp(filename, channels=[0])
-    sample_count = rec.siglen
+    # Get the signal length by reading the header.
+    hea = wfdb.rdheader(filename)
+    sample_count = hea.siglen
+
+    # Read the user given record.  Only get the first channels.
     rec = wfdb.rdsamp(filename, channels=[0], sampto=sample_count-args.tail_samples_removed)
 
     # Does an annotation file exist?
@@ -49,7 +50,7 @@ def main(arg_list=None):
                                                                         len(an_file.annsamp))
 
     # Plot...
-    wfdb.plotrec(rec, title=plot_title, timeunits='seconds', figsize=(10, 10), annotation=an_file, ecggrids='all')
+    wfdb.plotrec(rec, title=plot_title, timeunits='seconds', figsize=(10, 5), annotation=an_file, ecggrids='all')
 
 
 ###############################################################################
