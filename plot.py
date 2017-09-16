@@ -15,6 +15,8 @@ def main(arg_list=None):
     parser.add_argument('-s', dest='tail_samples_removed', type=int, default=0,
                         help='number of sample to remove from the end, optimizes plot, defaults to zero',
                         required=False)
+    parser.add_argument('-c', dest='channels', nargs='+',
+                        help='List of channel names to plot', required=False)
     parser.add_argument('--version', action='version', help='Print version.',
                         version='%(prog)s Version {version}'.format(version=__version__))
 
@@ -37,8 +39,15 @@ def main(arg_list=None):
     hea = wfdb.rdheader(filename)
     sample_count = hea.siglen
 
+    # Process user given channels (if any)
+    channels_to_plot = []
+    if args.channels is not None:
+        channels_to_plot = [i for i, e in enumerate(hea.signame) if e in set(args.channels)]
+    else:
+        channels_to_plot.append(0)
+
     # Read the user given record.  Only get the first channels.
-    rec = wfdb.rdsamp(filename, channels=[0], sampto=sample_count-args.tail_samples_removed)
+    rec = wfdb.rdsamp(filename, channels=channels_to_plot, sampto=sample_count-args.tail_samples_removed)
 
     # Does an annotation file exist?
     an_file = None
@@ -46,8 +55,8 @@ def main(arg_list=None):
         an_file = wfdb.rdann(filename, annotator='prf', sampto=sample_count-args.tail_samples_removed)
 
     # Construct a title
-    plot_title = '{0:s}, Sample count: {1:d}, Pace count: {2:d}'.format(os.path.basename(args.input_file), sample_count,
-                                                                        len(an_file.annsamp))
+    plot_title = '{0:s}, Sample count: {1:d}, Pace count: {2:d}, Signals: {3:s}'\
+        .format(os.path.basename(args.input_file), sample_count, len(an_file.annsamp), ', '.join(hea.signame))
 
     # Plot...
     wfdb.plotrec(rec, title=plot_title, timeunits='seconds', figsize=(10, 5), annotation=an_file, ecggrids='all')
